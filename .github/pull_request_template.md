@@ -1,5 +1,3 @@
-cat > .github/PULL_REQUEST_TEMPLATE.md <<'EOF'
-
 ## 요약
 
 - (무엇을, 왜)
