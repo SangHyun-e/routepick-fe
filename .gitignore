@@ -11,3 +11,11 @@ android/local.properties
 # IDE
 .vscode/
 .idea/
+
+.flutter-plugins
+.flutter-plugins-dependencies
+.melos_tool
+.dart_tool/
+.packages
+firebase_app_id_file.json
+.metadata
