@@ -1,21 +1,29 @@
 # Flutter/Dart
 .dart_tool/
 .packages
+.flutter-plugins
+.flutter-plugins-dependencies
 build/
 
 # Platform
 ios/Pods/
 android/.gradle/
 android/local.properties
+# (추가 플랫폼 생기면 필요 시 무시 규칙 추가)
 
 # IDE
 .vscode/
 .idea/
 
-.flutter-plugins
-.flutter-plugins-dependencies
+# Monorepo tool (미사용이면 그냥 둬도 무방)
 .melos_tool
-.dart_tool/
-.packages
-firebase_app_id_file.json
+
+# Flutter metadata(보통 무시)
 .metadata
+
+# OS junk
+.DS_Store
+Thumbs.db
+
+# Firebase
+# firebase_app_id_file.json   # Firebase 사용할 계획이면 주석 처리(즉, 커밋)
