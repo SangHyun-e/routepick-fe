@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
@@ -6,8 +7,13 @@ class HomeScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('RoutePick - Home (Public)')),
-      body: const Center(child: Text('비회원도 접근 가능한 공개 화면')),
+      appBar: AppBar(title: const Text('RoutePick Home')),
+      body: Center(
+        child: FilledButton(
+          onPressed: () => context.go('/login'),
+          child: const Text('로그인 페이지 이동'),
+        ),
+      ),
     );
   }
 }
