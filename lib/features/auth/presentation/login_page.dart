@@ -38,28 +38,42 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         password: _password.text,
       );
 
+      debugPrint(
+        '[LoginPage] login OK: token len=${res.accessToken.length}, exp=${res.expiresIn}',
+      );
+
       // 토큰 저장
       ref.read(accessTokenProvider.notifier).state = res.accessToken;
 
       if (!mounted) return;
+
       // 홈으로 이동
       GoRouter.of(context).go('/');
-    } on DioException catch (e) {
-      final msg =
-          e.response?.data is Map &&
-              (e.response!.data as Map)['message'] is String
-          ? (e.response!.data as Map)['message'] as String
-          : '로그인 실패';
+    } on DioException catch (e, st) {
+      String msg = '로그인 실패';
+      final data = e.response?.data;
+      if (data is Map && data['message'] is String) {
+        msg = data['message'] as String;
+      }
+
+      debugPrint(
+        'LoginPage] DioException type= ${e.type}, status=${e.response?.statusCode} data=$data',
+      );
+
+      debugPrint(st as String?);
+
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
       }
-    } catch (_) {
+    } catch (e, st) {
+      debugPrint('[LoginPage] Unknown error: $e');
+      debugPrint(st as String?);
       if (mounted) {
         ScaffoldMessenger.of(
           context,
-        ).showSnackBar(const SnackBar(content: Text('네트워크 오류')));
+        ).showSnackBar(SnackBar(content: Text('알 수 없는 오류: $e')));
       }
     } finally {
       if (mounted) {

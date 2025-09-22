@@ -6,9 +6,22 @@ class LoginResponse {
   const LoginResponse({required this.accessToken, required this.expiresIn});
 
   factory LoginResponse.fromJson(Map<String, dynamic> json) {
-    return LoginResponse(
-      accessToken: (json['accessToken'] as String?) ?? '',
-      expiresIn: (json['expiresIn'] as num?)?.toInt() ?? 0,
-    );
+    final token = json['accessToken'];
+    final exp = json['expiresIn'];
+
+    if (token is! String) {
+      throw FormatException('accessToken is not String: ${token.runtimeType}');
+    }
+    final intExp = switch (exp) {
+      int v => v,
+      num v => v.toInt(),
+      _ => throw FormatException('expiresIn is not num: ${exp.runtimeType}'),
+    };
+
+    return LoginResponse(accessToken: token, expiresIn: intExp);
+  }
+
+  Map<String, dynamic> toJson() {
+    return {'accessToken': accessToken, 'expiresIn': expiresIn};
   }
 }
