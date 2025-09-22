@@ -47,38 +47,30 @@ class _LoginPageState extends ConsumerState<LoginPage> {
 
       if (!mounted) return;
 
-      // 홈으로 이동
-      GoRouter.of(context).go('/');
-    } on DioException catch (e, st) {
-      String msg = '로그인 실패';
+      // from 쿼리 있으면 거기로, 없으면 홈으로 이동
+      final from = GoRouterState.of(context).uri.queryParameters['from'];
+      context.go(from ?? '/');
+    } on DioException catch (e) {
       final data = e.response?.data;
-      if (data is Map && data['message'] is String) {
-        msg = data['message'] as String;
-      }
-
+      final msg = (data is Map && data['message'] is String)
+          ? data['message'] as String
+          : '로그인에 실패했습니다: ${e.message}';
       debugPrint(
         'LoginPage] DioException type= ${e.type}, status=${e.response?.statusCode} data=$data',
       );
-
-      debugPrint(st as String?);
-
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text(msg)));
       }
-    } catch (e, st) {
-      debugPrint('[LoginPage] Unknown error: $e');
-      debugPrint(st as String?);
+    } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(
           context,
         ).showSnackBar(SnackBar(content: Text('알 수 없는 오류: $e')));
       }
     } finally {
-      if (mounted) {
-        setState(() => _submitting = false);
-      }
+      if (mounted) setState(() => _submitting = false);
     }
   }
 

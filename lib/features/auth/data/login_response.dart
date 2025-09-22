@@ -21,7 +21,8 @@ class LoginResponse {
     return LoginResponse(accessToken: token, expiresIn: intExp);
   }
 
-  Map<String, dynamic> toJson() {
-    return {'accessToken': accessToken, 'expiresIn': expiresIn};
-  }
+  Map<String, dynamic> toJson() => {
+    'accessToken': accessToken,
+    'expiresIn': expiresIn,
+  };
 }

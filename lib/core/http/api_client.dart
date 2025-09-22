@@ -1,10 +1,9 @@
+import 'package:dio/browser.dart';
 import 'package:dio/dio.dart';
+import 'package:flutter/foundation.dart';
+import 'package:route_pick_fe/core/env/env.dart';
 
-import '../env/env.dart';
-import 'with_credentials_io.dart'
-    if (dart.library.html) 'with_credentials_web.dart';
-
-Dio createDio() {
+final Dio http = (() {
   final dio = Dio(
     BaseOptions(
       baseUrl: Env.apiBaseUrl,
@@ -15,10 +14,10 @@ Dio createDio() {
     ),
   );
 
-  // 웹에서 쿠키(리프레시 토큰) 포함되도록 설정
-  configureWithCredentials(dio);
+  // 웹에서 리프레시 쿠키를 오가게 하려면 withCredentials: true 필요
+  if (kIsWeb) {
+    dio.httpClientAdapter = BrowserHttpClientAdapter()..withCredentials;
+  }
 
   return dio;
-}
-
-final Dio http = createDio();
+})();
