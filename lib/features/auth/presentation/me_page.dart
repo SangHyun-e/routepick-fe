@@ -24,6 +24,13 @@ class _MePageState extends ConsumerState<MePage> {
   // API 인스턴스
   final _api = AuthApi();
 
+  void _safeGo(String location) {
+    if (!mounted) return;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) context.go(location);
+    });
+  }
+
   // 비동기: /users/me 호출
   Future<void> _loadMe() async {
     // accessToken 읽기(ref.read: 한 번 읽기)
@@ -34,6 +41,7 @@ class _MePageState extends ConsumerState<MePage> {
         _error = '로그인이 필요합니다';
         _me = null;
       });
+      _safeGo('/login?from=%2Fme');
       return;
     }
 
@@ -41,6 +49,7 @@ class _MePageState extends ConsumerState<MePage> {
       _loading = true;
       _error = null;
     });
+
     try {
       final map = await _api.me(accessToken: token);
       setState(() => _me = map);
@@ -48,7 +57,8 @@ class _MePageState extends ConsumerState<MePage> {
       // 인증 만료 --> 토큰 비우고 로그인으로
       if (e.response?.statusCode == 401) {
         ref.read(accessTokenProvider.notifier).state = null;
-        if (mounted) GoRouter.of(context).go('/login?from=%2Fme');
+        await ref.read(tokenStorageProvider).save(null);
+        _safeGo('/login?from=%2Fme');
         return;
       }
       setState(() {
@@ -61,16 +71,14 @@ class _MePageState extends ConsumerState<MePage> {
         _me = null;
       });
     } finally {
-      if (mounted) {
-        setState(() => _loading = false);
-      }
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _logout() async {
     final token = ref.read(accessTokenProvider);
     if (token == null || token.isEmpty) {
-      if (mounted) context.go('/login');
+      _safeGo('/login');
       return;
     }
 
@@ -78,16 +86,19 @@ class _MePageState extends ConsumerState<MePage> {
     try {
       await _api.logout(accessToken: token);
     } catch (_) {
-      // 서버 요청 실패해도 클라이언트 상태는 비우기(멱등)
+      // 서버 실패여도 클라 상태는 정리 (멱등)
     } finally {
-      // 클라이언트 토큰 비우기
+      // 토큰 제거 (메모리 + 디스크)
       ref.read(accessTokenProvider.notifier).state = null;
+      await ref.read(tokenStorageProvider).save(null);
+
       if (mounted) {
         setState(() {
           _loading = false;
           _me = null;
         });
-        context.go('/login?from=%2Fme');
+        // 명시적 로그아웃이면 보통 from 없이 login으로
+        _safeGo('/login');
       }
     }
   }
@@ -106,11 +117,12 @@ class _MePageState extends ConsumerState<MePage> {
       appBar: AppBar(
         title: const Text('내 정보'),
         actions: [
-          IconButton(
-            tooltip: '로그아웃',
-            onPressed: _loading ? null : _logout, // 로딩 중이면 비활성화
-            icon: const Icon(Icons.logout),
-          ),
+          if (_me != null)
+            IconButton(
+              tooltip: '로그아웃',
+              onPressed: _loading ? null : _logout, // 로딩 중이면 비활성화
+              icon: const Icon(Icons.logout),
+            ),
         ],
       ),
       body: Center(
