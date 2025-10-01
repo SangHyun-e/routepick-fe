@@ -42,8 +42,10 @@ class _LoginPageState extends ConsumerState<LoginPage> {
         '[LoginPage] login OK: token len=${res.accessToken.length}, exp=${res.expiresIn}',
       );
 
-      // 토큰 저장
+      // 메모리 세팅
       ref.read(accessTokenProvider.notifier).state = res.accessToken;
+      // 디스크 저장
+      await ref.read(tokenStorageProvider).save(res.accessToken);
 
       if (!mounted) return;
 
@@ -56,7 +58,7 @@ class _LoginPageState extends ConsumerState<LoginPage> {
           ? data['message'] as String
           : '로그인에 실패했습니다: ${e.message}';
       debugPrint(
-        'LoginPage] DioException type= ${e.type}, status=${e.response?.statusCode} data=$data',
+        '[LoginPage] DioException type= ${e.type}, status=${e.response?.statusCode} data=$data',
       );
       if (mounted) {
         ScaffoldMessenger.of(
