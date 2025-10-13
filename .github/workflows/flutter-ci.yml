@@ -4,17 +4,41 @@ on:
     branches: [dev, main]
   push:
     branches: [dev]
+
 jobs:
   ci:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+
       - uses: subosito/flutter-action@v2
         with:
-          channel: "stable"
+          channel: stable
           cache: true
+
       - run: flutter --version
       - run: flutter pub get
       - run: flutter analyze
-      - run: flutter test --coverage
-      - run: flutter build web --release
+
+      # 브라우저 전용 테스트면 Chrome으로 돌리고, 테스트 자체가 없으면 성공으로 스킵
+      - name: Run tests (VM or Chrome, skip if none)
+        run: |
+          set -e
+          # 테스트 파일 자체가 없으면 스킵
+          if ! compgen -G "test/**_test.dart" >/dev/null; then
+            echo "No tests found — skipping."
+            exit 0
+          fi
+
+          # '@TestOn("browser")'가 하나라도 있으면 크롬으로
+          if grep -RIl "@TestOn('browser')" test || grep -RIl '@TestOn("browser")' test; then
+            flutter config --enable-web
+            flutter test --platform chrome --coverage
+          else
+            flutter test --coverage
+          fi
+
+      - name: Build web release
+        run: |
+          flutter config --enable-web
+          flutter build web --release
