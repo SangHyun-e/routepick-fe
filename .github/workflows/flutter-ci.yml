@@ -20,23 +20,38 @@ jobs:
       - run: flutter pub get
       - run: flutter analyze
 
-      # 브라우저 전용 테스트면 Chrome으로 돌리고, 테스트 자체가 없으면 성공으로 스킵
-      - name: Run tests (VM or Chrome, skip if none)
+      # 테스트 감지
+      - name: Detect tests
+        id: detect
+        shell: bash
         run: |
-          set -e
-          # 테스트 파일 자체가 없으면 스킵
-          if ! compgen -G "test/**_test.dart" >/dev/null; then
-            echo "No tests found — skipping."
-            exit 0
+          echo "has_tests=false" >> "$GITHUB_OUTPUT"
+          echo "browser=false" >> "$GITHUB_OUTPUT"
+
+          if compgen -G "test/**_test.dart" >/dev/null; then
+            echo "has_tests=true" >> "$GITHUB_OUTPUT"
+            if grep -RIl "@TestOn('browser')" test >/dev/null 2>&1 || \
+               grep -RIl '@TestOn("browser")' test >/dev/null 2>&1; then
+              echo "browser=true" >> "$GITHUB_OUTPUT"
+            fi
           fi
 
-          # '@TestOn("browser")'가 하나라도 있으면 크롬으로
-          if grep -RIl "@TestOn('browser')" test || grep -RIl '@TestOn("browser")' test; then
-            flutter config --enable-web
-            flutter test --platform chrome --coverage
-          else
-            flutter test --coverage
-          fi
+      # 브라우저 전용 테스트면 Chrome
+      - name: Run tests on Chrome with coverage
+        if: steps.detect.outputs.has_tests == 'true' && steps.detect.outputs.browser == 'true'
+        run: |
+          flutter config --enable-web
+          flutter test --platform chrome --coverage
+
+      # 일반(VM) 테스트
+      - name: Run tests on VM with coverage
+        if: steps.detect.outputs.has_tests == 'true' && steps.detect.outputs.browser != 'true'
+        run: flutter test --coverage
+
+      # 테스트 없으면 스킵(성공 처리)
+      - name: No tests found — skip
+        if: steps.detect.outputs.has_tests != 'true'
+        run: echo "No tests found — skipping."
 
       - name: Build web release
         run: |
