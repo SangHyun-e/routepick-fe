@@ -6,16 +6,17 @@ import 'with_credentials_io.dart'
     if (dart.library.html) 'with_credentials_web.dart';
 
 // 앱 전역에서 쓰는 Dio 인스턴스
-final Dio http = Dio(
-  BaseOptions(
-    baseUrl: Env.apiBaseUrl,
-    connectTimeout: const Duration(seconds: 10),
-    receiveTimeout: const Duration(seconds: 10),
-    contentType: 'application/json',
-    headers: const {'Accept': 'application/json'},
-  ),
-);
+final Dio http = (() {
+  final dio = Dio(
+    BaseOptions(
+      baseUrl: Env.apiBaseUrl,
+      connectTimeout: const Duration(seconds: 10),
+      receiveTimeout: const Duration(seconds: 10),
+      contentType: 'application/json',
+      headers: const {'Accept': 'application/json'},
+    ),
+  );
 
-void initHttp() {
-  configureWithCredentials(http);
-}
+  configureWithCredentials(dio);
+  return dio;
+})();
