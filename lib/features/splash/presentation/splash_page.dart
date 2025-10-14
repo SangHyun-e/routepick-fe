@@ -7,7 +7,9 @@ import 'package:route_pick_fe/features/auth/data/auth_api.dart';
 import 'package:route_pick_fe/features/state/auth_providers.dart';
 
 class SplashPage extends ConsumerStatefulWidget {
-  const SplashPage({super.key});
+  const SplashPage({super.key, this.initialTarget});
+
+  final String? initialTarget;
   @override
   ConsumerState<SplashPage> createState() => _SplashPageState();
 }
@@ -29,12 +31,34 @@ class _SplashPageState extends ConsumerState<SplashPage> {
 
     debugPrint('[Splash] boot start');
 
+    final fromParam = widget.initialTarget;
+    String? normalizeTarget(String? value) {
+      if (value == null || value.isEmpty || value == '/splash') return null;
+      return value;
+    }
+    final target = normalizeTarget(fromParam);
+    bool needsLogin(String? location) {
+      if (location == null) return false;
+      final uri = Uri.tryParse(location);
+      final path = uri?.path ?? location;
+      return path.startsWith('/me') || path.startsWith('/posts/write');
+    }
+    final requiresLogin = needsLogin(target);
+    final loginUri = Uri(
+      path: '/login',
+      queryParameters: target == null ? null : {'from': target},
+    ).toString();
+
     try {
       // 1) 디스크에서 토큰 로드
       final saved = await ref.read(tokenStorageProvider).load();
       debugPrint('[Splash] saved token? ${saved != null}');
       if (saved == null || saved.isEmpty) {
-        _safeGo('/login');
+        if (requiresLogin) {
+          _safeGo(loginUri);
+        } else {
+          _safeGo(target ?? '/');
+        }
         return;
       }
 
@@ -44,7 +68,7 @@ class _SplashPageState extends ConsumerState<SplashPage> {
       // 3) 서버로 토큰 확인 (me 호출)
       await _api.me(accessToken: saved);
       debugPrint('[Splash] me OK → /');
-      _safeGo('/'); // OK이면 홈
+      _safeGo(target ?? '/'); // OK이면 원래 가려던 곳 또는 홈
     } on DioException catch (e) {
       debugPrint(
         '[Splash] DioException status=${e.response?.statusCode} type=${e.type}',
@@ -52,13 +76,13 @@ class _SplashPageState extends ConsumerState<SplashPage> {
       // 401 등 → 토큰 삭제 후 로그인
       ref.read(accessTokenProvider.notifier).state = null;
       await ref.read(tokenStorageProvider).save(null);
-      _safeGo('/login');
+      _safeGo(requiresLogin ? loginUri : (target ?? '/'));
     } catch (e) {
       debugPrint('[Splash] unknown error: $e');
       // 알 수 없는 오류 → 안전하게 로그인으로
       ref.read(accessTokenProvider.notifier).state = null;
       await ref.read(tokenStorageProvider).save(null);
-      _safeGo('/login');
+      _safeGo(requiresLogin ? loginUri : (target ?? '/'));
     }
   }
 

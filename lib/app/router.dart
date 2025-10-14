@@ -14,33 +14,70 @@ import 'package:route_pick_fe/features/state/auth_providers.dart';
 const _protectedPaths = {'/me', '/posts/write'};
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final refresh = ValueNotifier(0);
-  ref.listen<String?>(accessTokenProvider, (_, __) => refresh.value++);
-
-  String? token() => ref.read(accessTokenProvider);
-  bool authed() => (token() ?? '').isNotEmpty;
+  final notifier = ref.watch(routerNotifierProvider);
 
   return GoRouter(
     initialLocation: '/splash',
-    refreshListenable: refresh,
+    refreshListenable: notifier,
     debugLogDiagnostics: kDebugMode,
     redirect: (context, state) {
       final path = state.matchedLocation;
+      final uri = state.uri;
+      final fullLocation = uri.toString();
+      final authed = (notifier.token ?? '').isNotEmpty;
 
-      // 보호 경로만 가드
-      if (!authed() && _protectedPaths.any((p) => path.startsWith(p))) {
-        final going = state.uri.toString();
-        return '/login?from=${Uri.encodeComponent(going)}';
+      if (!notifier.bootstrapped) {
+        if (path == '/splash') return null;
+        return Uri(
+          path: '/splash',
+          queryParameters: {'from': fullLocation},
+        ).toString();
       }
-      // 로그인된 상태에서 /login로 못 가게
-      if (authed() && path == '/login') {
-        final from = state.uri.queryParameters['from'];
-        return from ?? '/';
+
+      if (path == '/splash') {
+        final fromParam = uri.queryParameters['from'];
+        if (!authed) {
+          if (fromParam == null || fromParam.isEmpty) return '/';
+          final fromUri = Uri.tryParse(fromParam);
+          final fromPath = fromUri?.path ?? fromParam;
+          final needsLogin =
+              _protectedPaths.any((protected) => fromPath.startsWith(protected));
+          if (needsLogin) {
+            return Uri(
+              path: '/login',
+              queryParameters: {'from': fromParam},
+            ).toString();
+          }
+          return fromParam;
+        }
+        return fromParam ?? '/';
       }
+
+      if (!authed) {
+        if (path == '/login') return null;
+        final protected =
+            _protectedPaths.any((protected) => path.startsWith(protected));
+        if (!protected) return null;
+        return Uri(
+          path: '/login',
+          queryParameters: {'from': fullLocation},
+        ).toString();
+      }
+
+      if (path == '/login') {
+        final fromParam = uri.queryParameters['from'];
+        return fromParam ?? '/';
+      }
+
       return null;
     },
     routes: [
-      GoRoute(path: '/splash', builder: (_, __) => const SplashPage()),
+      GoRoute(
+        path: '/splash',
+        builder: (_, state) => SplashPage(
+          initialTarget: state.uri.queryParameters['from'],
+        ),
+      ),
       GoRoute(path: '/', builder: (_, __) => const HomePage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/me', builder: (_, __) => const MePage()),
