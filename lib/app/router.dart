@@ -6,11 +6,12 @@ import 'package:route_pick_fe/features/auth/presentation/home_page.dart';
 import 'package:route_pick_fe/features/auth/presentation/login_page.dart';
 import 'package:route_pick_fe/features/auth/presentation/me_page.dart';
 import 'package:route_pick_fe/features/posts/presentation/post_detail_page.dart';
+import 'package:route_pick_fe/features/posts/presentation/post_write_page.dart';
 import 'package:route_pick_fe/features/posts/presentation/posts_list_page.dart';
 import 'package:route_pick_fe/features/splash/presentation/splash_page.dart';
 import 'package:route_pick_fe/features/state/auth_providers.dart';
 
-const _protectedPaths = {'/me', '/write'};
+const _protectedPaths = {'/me', '/posts/write'};
 
 final routerProvider = Provider<GoRouter>((ref) {
   final refresh = ValueNotifier(0);
@@ -44,9 +45,12 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/me', builder: (_, __) => const MePage()),
       GoRoute(path: '/posts', builder: (_, __) => const PostsListPage()),
+      GoRoute(path: '/posts/write', builder: (_, __) => const PostWritePage()),
       GoRoute(
         path: '/posts/:id',
-        builder: (_, state) => PostDetailPage(id: state.pathParameters['id']!),
+        builder: (_, s) {
+          return PostDetailPage(id: s.pathParameters['id']!);
+        },
       ),
     ],
   );
