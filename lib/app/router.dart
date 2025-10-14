@@ -5,6 +5,8 @@ import 'package:go_router/go_router.dart';
 import 'package:route_pick_fe/features/auth/presentation/home_page.dart';
 import 'package:route_pick_fe/features/auth/presentation/login_page.dart';
 import 'package:route_pick_fe/features/auth/presentation/me_page.dart';
+import 'package:route_pick_fe/features/posts/presentation/post_detail_page.dart';
+import 'package:route_pick_fe/features/posts/presentation/posts_list_page.dart';
 import 'package:route_pick_fe/features/splash/presentation/splash_page.dart';
 import 'package:route_pick_fe/features/state/auth_providers.dart';
 
@@ -41,6 +43,11 @@ final routerProvider = Provider<GoRouter>((ref) {
       GoRoute(path: '/', builder: (_, __) => const HomePage()),
       GoRoute(path: '/login', builder: (_, __) => const LoginPage()),
       GoRoute(path: '/me', builder: (_, __) => const MePage()),
+      GoRoute(path: '/posts', builder: (_, __) => const PostsListPage()),
+      GoRoute(
+        path: '/posts/:id',
+        builder: (_, state) => PostDetailPage(id: state.pathParameters['id']!),
+      ),
     ],
   );
 });
