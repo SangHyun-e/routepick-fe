@@ -90,4 +90,36 @@ class PostsApi {
         : <String, dynamic>{};
     return Post.fromMap(data);
   }
+
+  Future<String> create({
+    required String title,
+    required String content,
+    String? region,
+    List<String>? tags,
+    double? latitude,
+    double? longitude,
+    required String accessToken,
+  }) async {
+    final res = await _dio.post(
+      '/posts',
+      data: {
+        'title': title,
+        'content': content,
+        if (region != null && region.isNotEmpty) 'region': region,
+        if (tags != null) 'tags': tags,
+        if (latitude != null && longitude != null) ...{
+          'latitude': latitude,
+          'longitude': longitude,
+        },
+      },
+      options: Options(headers: {'Authorization': 'Bearer $accessToken'}),
+    );
+
+    final data = res.data;
+    if (data is Map && data['id'] != null) return '${data['id']}';
+    if (data is Map && data['data'] is Map && data['data']['id'] != null) {
+      return '${data['data']['id']}';
+    }
+    return '$data';
+  }
 }

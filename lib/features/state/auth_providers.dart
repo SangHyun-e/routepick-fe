@@ -38,20 +38,6 @@ class RouterNotifier extends ChangeNotifier {
 
   String? get token => ref.read(accessTokenProvider);
   bool get bootstrapped => ref.read(authBootstrapProvider).hasValue;
-
-  String? redirectLogic(_, state) {
-    final path = state.matchedLocation; // go_router 버전에 따라 state.subloc일 수 있음
-    final going = state.uri.toString();
-
-    if (!bootstrapped) return path == '/splash' ? null : '/splash';
-    if (token == null) {
-      return path == '/login'
-          ? null
-          : '/login?from=${Uri.encodeComponent(going)}';
-    }
-    if (path == '/login') return '/';
-    return null;
-  }
 }
 
 final routerNotifierProvider = Provider<RouterNotifier>(
